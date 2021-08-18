@@ -26,7 +26,7 @@ Example
 ```
 
 ### Configure WebStorm
-1. Put `lwcWatcher` to project root
+1. Put `lwc_watcher_(mac|linux)` to project root
 2. Open `Preferences -> File Watcher`
 3. Click button `Add`
 4. Put some name
@@ -34,7 +34,7 @@ Example
 6. Put `-f $FilePath$` to `Arguments` field
 7. Click `Ok` and `Applay`
 
-If you have lwc components already, just run `./lwcWatcher --first` in CLI for prepare all yours components
+If you have lwc components already, just run `./lwc_watcher_(mac|linux) --first` in CLI for prepare all yours components
 
 ### Know issues
 1. Watcher does not sync removed files
