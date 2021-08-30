@@ -29,10 +29,11 @@ Example
 1. Put `lwc_watcher_(mac|linux|win)` to project root
 2. Open `Preferences -> File Watcher`
 3. Click button `Add`
-4. Put some name
-5. Select bin file in `Program` field
-6. Put `-f $FilePath$` to `Arguments` field
-7. Click `Ok` and `Applay`
+4. Put any name
+5. File Type -> Any
+6. Select bin file in `Program` field
+7. Put `-f $FilePath$` to `Arguments` field
+8. Click `Ok` and `Applay`
 
 If you have lwc components already, just run `./lwc_watcher_(mac|linux|win) --first` in CLI for prepare all yours components
 
