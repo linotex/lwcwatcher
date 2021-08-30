@@ -36,6 +36,3 @@ Example
 8. Click `Ok` and `Applay`
 
 If you have lwc components already, just run `./lwc_watcher_(mac|linux|win) --first` in CLI for prepare all yours components
-
-### Know issues
-1. Watcher does not sync removed files
