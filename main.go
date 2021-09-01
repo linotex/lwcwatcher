@@ -11,7 +11,11 @@ import (
 	"strings"
 )
 
-const VERSION = "0.1"
+const VERSION = "0.2"
+
+var ProjectDir string
+var WatchPackage string
+var DefaultPackage string
 
 func main() {
 
@@ -32,23 +36,23 @@ func main() {
 		return
 	}
 
-	currentDir, _ := filepath.Abs(filepath.Dir(os.Args[0]))
+	ProjectDir, _ = filepath.Abs(filepath.Dir(os.Args[0]))
 
-	project := config.LoadConfig(currentDir)
+	project := config.LoadConfig(ProjectDir)
 
-	watchPackage := project.GetWatchPackage()
-	defaultPackage := project.GetDefaultPackage()
+	WatchPackage = project.GetWatchPackage()
+	DefaultPackage = project.GetDefaultPackage()
 
-	if watchPackage == "" {
+	if WatchPackage == "" {
 		log.Fatal("Nothing to watch")
 	}
 
-	if defaultPackage == "" {
+	if DefaultPackage == "" {
 		log.Fatal("No default package")
 	}
 
 	if *first {
-		CopyAllLwc(currentDir, watchPackage, defaultPackage)
+		CopyAllLwc()
 		return
 	}
 
@@ -56,43 +60,68 @@ func main() {
 		return
 	}
 
-	if !IsWatchPackage(watchPackage, currentDir, *file) {
+	if !IsWatchPackage(*file) {
 		return
 	}
 
-	CopyLwc(defaultPackage, currentDir, *file)
+	fmt.Println("File: ", *file)
+
+	if isLwcFile(*file) {
+		CopyLwc(*file)
+	} else if isStaticResourceFile(*file) {
+		CopyStaticResource(*file)
+	}
 }
 
-func IsWatchPackage(watchPackage string, projectDir string, file string) bool {
-	lwcPath := projectDir + "/" + watchPackage + "/main/default/lwc"
-	return strings.Index(file, lwcPath) == 0
+func watchPackagePath() string {
+	return ProjectDir + "/" + WatchPackage + "/main/default"
 }
 
-func CopyLwc(defaultPackage string, projectDir string, file string) {
+func defaultPackagePath() string {
+	return ProjectDir + "/" + DefaultPackage + "/main/default"
+}
 
-	fmt.Println("File: ", file)
+func IsWatchPackage(file string) bool {
+	return strings.Index(file, watchPackagePath()) == 0
+}
 
+func isLwcFile(file string) bool {
+	return strings.Index(file, watchPackagePath()+"/lwc") == 0
+}
+
+func isStaticResourceFile(file string) bool {
+	return strings.Index(file, watchPackagePath()+"/staticresources") == 0
+}
+
+func CopyStaticResource(file string) {
+	staticResourcesFile := strings.ReplaceAll(file, watchPackagePath(), "")
+
+	targetFile := defaultPackagePath() + staticResourcesFile
+	copyFile(file, targetFile)
+}
+
+func CopyLwc(file string) {
 	filePathParts := strings.Split(file, "/")
 
-	fileName := filePathParts[len(filePathParts) - 1]
-	componentName := filePathParts[len(filePathParts) - 2]
+	fileName := filePathParts[len(filePathParts)-1]
+	componentName := filePathParts[len(filePathParts)-2]
 
-	targetDir := projectDir + "/" + defaultPackage + "/main/default/lwc/" + componentName
-	copyFile(file, targetDir + "/" + fileName)
+	targetDir := defaultPackagePath() + "/lwc/" + componentName
+	copyFile(file, targetDir+"/"+fileName)
 }
 
-func CopyAllLwc(currentDir string, watchPackage string, defaultPackage string) {
+func CopyAllLwc() {
 	var componentPaths []string
-	sourceDir := currentDir + "/" + watchPackage + "/main/default"
-	targetDir := currentDir + "/" + defaultPackage + "/main/default/lwc"
+	sourceDir := watchPackagePath()
+	targetDir := defaultPackagePath() + "/lwc"
 
 	componentPaths = readLwcDir(sourceDir, componentPaths)
 	fmt.Println("Count", len(componentPaths))
 
 	for _, f := range componentPaths {
 		arr := strings.Split(f, "/")
-		dirName := arr[len(arr) - 1]
-		copyDir(f, targetDir + "/" + dirName)
+		dirName := arr[len(arr)-1]
+		copyDir(f, targetDir+"/"+dirName)
 	}
 
 	fmt.Println("Done.")
@@ -135,21 +164,21 @@ func getListFiles(path string, isDir bool) []string {
 	for _, v := range list {
 		if isDir {
 			if v.IsDir() {
-				paths = append(paths, path + "/" + v.Name())
+				paths = append(paths, path+"/"+v.Name())
 			}
 		} else {
-			paths = append(paths, path + "/" + v.Name())
+			paths = append(paths, path+"/"+v.Name())
 		}
 	}
 
 	return paths
 }
 
-func copyDir(source string, target string)  {
+func copyDir(source string, target string) {
 	files := getListFiles(source, false)
 	for _, f := range files {
 		stat, _ := os.Stat(f)
-		copyFile(f, target + "/" + stat.Name())
+		copyFile(f, target+"/"+stat.Name())
 	}
 }
 
