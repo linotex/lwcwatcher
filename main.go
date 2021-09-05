@@ -146,6 +146,11 @@ func CopyAllStaticResources() {
  * 2. Component path
  */
 func getComponentNameWithPath(pathStr string) (string, string) {
+
+	if pathStr == watchPackagePath() || pathStr == "/" {
+		log.Fatal("cannot detect component name")
+	}
+
 	dir := path.Dir(pathStr)
 	_, files, _ := getListFiles(dir)
 
@@ -161,7 +166,7 @@ func getComponentNameWithPath(pathStr string) (string, string) {
 	if name != "" {
 		return name, dir
 	} else {
-		return getComponentNameWithPath(path.Dir(dir))
+		return getComponentNameWithPath(dir)
 	}
 }
 
