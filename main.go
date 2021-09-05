@@ -7,11 +7,12 @@ import (
 	"log"
 	"lwcWatcher/src/config"
 	"os"
+	"path"
 	"path/filepath"
 	"strings"
 )
 
-const VERSION = "0.2"
+const VERSION = "0.3"
 
 var ProjectDir string
 var WatchPackage string
@@ -36,7 +37,7 @@ func main() {
 		return
 	}
 
-	ProjectDir, _ = filepath.Abs(filepath.Dir(os.Args[0]))
+	ProjectDir, _ = filepath.Abs(path.Dir(os.Args[0]))
 
 	project := config.LoadConfig(ProjectDir)
 
@@ -53,6 +54,7 @@ func main() {
 
 	if *first {
 		CopyAllLwc()
+		CopyAllStaticResources()
 		return
 	}
 
@@ -101,12 +103,12 @@ func CopyStaticResource(file string) {
 }
 
 func CopyLwc(file string) {
-	filePathParts := strings.Split(file, "/")
+	fileName := path.Base(file)
+	componentName, componentDir := getComponentNameWithPath(file)
 
-	fileName := filePathParts[len(filePathParts)-1]
-	componentName := filePathParts[len(filePathParts)-2]
+	relativePath, _ := filepath.Rel(componentDir, path.Dir(file))
 
-	targetDir := defaultPackagePath() + "/lwc/" + componentName
+	targetDir := defaultPackagePath() + "/lwc/" + componentName + "/" + relativePath
 	copyFile(file, targetDir+"/"+fileName)
 }
 
@@ -115,27 +117,63 @@ func CopyAllLwc() {
 	sourceDir := watchPackagePath()
 	targetDir := defaultPackagePath() + "/lwc"
 
-	componentPaths = readLwcDir(sourceDir, componentPaths)
+	fmt.Println("Start copy LWC")
+
+	componentPaths = collectComponentPaths(sourceDir, componentPaths)
 	fmt.Println("Count", len(componentPaths))
 
 	for _, f := range componentPaths {
-		arr := strings.Split(f, "/")
-		dirName := arr[len(arr)-1]
-		copyDir(f, targetDir+"/"+dirName)
+		copyDir(f, targetDir+"/"+path.Base(f))
 	}
 
 	fmt.Println("Done.")
 }
 
-func readLwcDir(dir string, componentPaths []string) []string {
+func CopyAllStaticResources() {
+	sourceDir := watchPackagePath() + "/staticresources"
+	targetDir := defaultPackagePath() + "/staticresources"
+
+	fmt.Println("Start copy static resources")
+
+	copyDir(sourceDir, targetDir)
+
+	fmt.Println("Done.")
+}
+
+/**
+ * Return
+ * 1. Component name
+ * 2. Component path
+ */
+func getComponentNameWithPath(pathStr string) (string, string) {
+	dir := path.Dir(pathStr)
+	_, files, _ := getListFiles(dir)
+
+	var name = ""
+
+	for _, f := range files {
+		file := path.Base(f)
+		if strings.Index(file, ".js-meta.xml") != -1 {
+			name = path.Base(path.Dir(f))
+		}
+	}
+
+	if name != "" {
+		return name, dir
+	} else {
+		return getComponentNameWithPath(path.Dir(dir))
+	}
+}
+
+func collectComponentPaths(dir string, componentPaths []string) []string {
 	lwcDir := dir + "/lwc"
 
 	if !dirIsExist(lwcDir) {
 		return append(componentPaths, dir)
 	} else {
-		folders := getListFiles(lwcDir, true)
-		for _, path := range folders {
-			componentPaths = readLwcDir(path, componentPaths)
+		_, _, folders := getListFiles(lwcDir)
+		for _, folder := range folders {
+			componentPaths = collectComponentPaths(folder, componentPaths)
 		}
 		return componentPaths
 	}
@@ -146,8 +184,16 @@ func dirIsExist(path string) bool {
 	return !os.IsNotExist(err)
 }
 
-func getListFiles(path string, isDir bool) []string {
+/**
+ * Return
+ * 1. List of files and folder
+ * 2. List of files
+ * 3. List of folder
+ */
+func getListFiles(path string) ([]string, []string, []string) {
 	var paths []string
+	var files []string
+	var folders []string
 
 	f, err := os.Open(path)
 	if err != nil {
@@ -162,32 +208,34 @@ func getListFiles(path string, isDir bool) []string {
 	}
 
 	for _, v := range list {
-		if isDir {
-			if v.IsDir() {
-				paths = append(paths, path+"/"+v.Name())
-			}
+		paths = append(paths, path+"/"+v.Name())
+		if v.IsDir() {
+			folders = append(folders, path+"/"+v.Name())
 		} else {
-			paths = append(paths, path+"/"+v.Name())
+			files = append(files, path+"/"+v.Name())
 		}
 	}
 
-	return paths
+	return paths, files, folders
 }
 
 func copyDir(source string, target string) {
-	files := getListFiles(source, false)
-	for _, f := range files {
+	paths, _, _ := getListFiles(source)
+	for _, f := range paths {
 		stat, _ := os.Stat(f)
-		copyFile(f, target+"/"+stat.Name())
+		if stat.IsDir() {
+			copyDir(f, target+"/"+path.Base(f))
+		} else {
+			copyFile(f, target+"/"+stat.Name())
+		}
 	}
 }
 
 func copyFile(source string, target string) {
-	targetDir := filepath.Dir(target)
-	_, err := os.Stat(target)
+	targetDir := path.Dir(target)
 
-	if os.IsNotExist(err) {
-		err = os.MkdirAll(targetDir, 0755)
+	if !dirIsExist(targetDir) {
+		err := os.MkdirAll(targetDir, 0755)
 		if err != nil {
 			log.Fatal(err)
 		}
