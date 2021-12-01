@@ -35,6 +35,6 @@ Example
 7. Put `-f $FilePath$` to `Arguments` field
 8. For better performance you can uncheck `Auto-check edited files to trigger the watcher` and run watcher only if press `Ctrl + S` (`Cmd + S` on MaC)
 9. Click `Ok` and `Applay`
-10. Dont forgetn click `Trust thos watcher` on first run
+10. Dont forgetn click `Trust this watcher` on first run
 
 If you have lwc components already, just run `./lwc_watcher_(mac|linux|win) --first` in CLI for prepare all yours components
