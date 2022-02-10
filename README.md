@@ -36,5 +36,6 @@ Example
 8. If watcher is not in root project dir, put argument `-project-dir $ProjectFileDir$`
 9. For better performance you can uncheck `Auto-check edited files to trigger the watcher` and run watcher only if press `Ctrl + S` (`Cmd + S` on MaC)
 10. Click `Ok` and `Applay`
+11. Dont forget click `Trust this watcher` on first run
 
 If you have lwc components already, just run `./lwc_watcher_(mac|linux|win) --first` in CLI for prepare all yours components
