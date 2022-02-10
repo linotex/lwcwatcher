@@ -12,7 +12,7 @@ import (
 	"strings"
 )
 
-const VERSION = "0.3"
+const VERSION = "0.4"
 
 var ProjectDir string
 var WatchPackage string
@@ -23,6 +23,7 @@ func main() {
 	isHelp := flag.Bool("h", false, "Show this screen")
 	first := flag.Bool("first", false, "Run watcher first time")
 	file := flag.String("f", "", "Changed file")
+	projectDir := flag.String("project-dir", "", "Project dir root")
 	version := flag.Bool("v", false, "Version of watcher")
 
 	flag.Parse()
@@ -37,9 +38,11 @@ func main() {
 		return
 	}
 
-	ProjectDir, _ = filepath.Abs(path.Dir(os.Args[0]))
+	if *projectDir == "" {
+		*projectDir, _ = filepath.Abs(path.Dir(os.Args[0]))
+	}
 
-	project := config.LoadConfig(ProjectDir)
+	project := config.LoadConfig(*projectDir)
 
 	WatchPackage = project.GetWatchPackage()
 	DefaultPackage = project.GetDefaultPackage()
