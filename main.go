@@ -1,6 +1,8 @@
 package main
 
 import (
+	"bufio"
+	"bytes"
 	"flag"
 	"fmt"
 	"io"
@@ -38,11 +40,13 @@ func main() {
 		return
 	}
 
-	if *projectDir == "" {
-		*projectDir, _ = filepath.Abs(path.Dir(os.Args[0]))
+	if *projectDir != "" {
+		ProjectDir = *projectDir
+	} else {
+		ProjectDir, _ = filepath.Abs(path.Dir(os.Args[0]))
 	}
 
-	project := config.LoadConfig(*projectDir)
+	project := config.LoadConfig(ProjectDir)
 
 	WatchPackage = project.GetWatchPackage()
 	DefaultPackage = project.GetDefaultPackage()
@@ -102,7 +106,10 @@ func CopyStaticResource(file string) {
 	staticResourcesFile := strings.ReplaceAll(file, watchPackagePath(), "")
 
 	targetFile := defaultPackagePath() + staticResourcesFile
-	copyFile(file, targetFile)
+
+	if !isEqual(file, targetFile) {
+		copyFile(file, targetFile)
+	}
 }
 
 func CopyLwc(file string) {
@@ -111,8 +118,11 @@ func CopyLwc(file string) {
 
 	relativePath, _ := filepath.Rel(componentDir, path.Dir(file))
 
-	targetDir := defaultPackagePath() + "/lwc/" + componentName + "/" + relativePath
-	copyFile(file, targetDir+"/"+fileName)
+	targetFile := defaultPackagePath() + "/lwc/" + componentName + "/" + relativePath + "/" + fileName
+
+	if !isEqual(file, targetFile) {
+		copyFile(file, targetFile)
+	}
 }
 
 func CopyAllLwc() {
@@ -266,4 +276,28 @@ func copyFile(source string, target string) {
 	if err != nil {
 		log.Fatal(err)
 	}
+}
+
+func isEqual(file1, file2 string) bool {
+	sf, err := os.Open(file1)
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	df, err := os.Open(file2)
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	sscan := bufio.NewScanner(sf)
+	dscan := bufio.NewScanner(df)
+
+	for sscan.Scan() {
+		dscan.Scan()
+		if !bytes.Equal(sscan.Bytes(), dscan.Bytes()) {
+			return false
+		}
+	}
+
+	return true
 }
