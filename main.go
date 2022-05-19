@@ -14,11 +14,13 @@ import (
 	"strings"
 )
 
-const VERSION = "0.4"
+const VERSION = "0.5"
 
-var ProjectDir string
-var WatchPackage string
-var DefaultPackage string
+var (
+	ProjectDir     string
+	WatchPackage   string
+	DefaultPackage string
+)
 
 func main() {
 
@@ -186,7 +188,7 @@ func getComponentNameWithPath(pathStr string) (string, string) {
 func collectComponentPaths(dir string, componentPaths []string) []string {
 	lwcDir := dir + "/lwc"
 
-	if !dirIsExist(lwcDir) {
+	if !pathIsExist(lwcDir) {
 		return append(componentPaths, dir)
 	} else {
 		_, _, folders := getListFiles(lwcDir)
@@ -197,7 +199,7 @@ func collectComponentPaths(dir string, componentPaths []string) []string {
 	}
 }
 
-func dirIsExist(path string) bool {
+func pathIsExist(path string) bool {
 	_, err := os.Stat(path)
 	return !os.IsNotExist(err)
 }
@@ -251,8 +253,7 @@ func copyDir(source string, target string) {
 
 func copyFile(source string, target string) {
 	targetDir := path.Dir(target)
-
-	if !dirIsExist(targetDir) {
+	if !pathIsExist(targetDir) {
 		err := os.MkdirAll(targetDir, 0755)
 		if err != nil {
 			log.Fatal(err)
@@ -278,13 +279,17 @@ func copyFile(source string, target string) {
 	}
 }
 
-func isEqual(file1, file2 string) bool {
-	sf, err := os.Open(file1)
+func isEqual(sourceFile, targetFile string) bool {
+	sf, err := os.Open(sourceFile)
 	if err != nil {
 		log.Fatal(err)
 	}
 
-	df, err := os.Open(file2)
+	if !pathIsExist(targetFile) {
+		return false
+	}
+
+	df, err := os.Open(targetFile)
 	if err != nil {
 		log.Fatal(err)
 	}
