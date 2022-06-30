@@ -33,14 +33,8 @@ Example
 5. File Type -> Any
 6. Select bin file in `Program` field
 7. Put `-f $FilePath$` to `Arguments` field
-<<<<<<< HEAD
-8. If watcher is not in root project dir, put argument `-project-dir $ProjectFileDir$`
-9. For better performance you can uncheck `Auto-check edited files to trigger the watcher` and run watcher only if press `Ctrl + S` (`Cmd + S` on MaC)
-10. Click `Ok` and `Applay`
-=======
 8. For better performance you can uncheck `Auto-check edited files to trigger the watcher` and run watcher only if press `Ctrl + S` (`Cmd + S` on MaC)
 9. Click `Ok` and `Applay`
 10. Dont forget click `Trust this watcher` on first run
->>>>>>> fdc658c (Update README.md)
 
 If you have lwc components already, just run `./lwc_watcher_(mac|linux|win) --first` in CLI for prepare all yours components
